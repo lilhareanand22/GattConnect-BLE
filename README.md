@@ -1,4 +1,4 @@
-# BleVButton
+# GattConnect-BLE
 
 BleVButton is a production-ready Android application designed to scan for, connect to, and interact with **V.BTTN** Bluetooth Low Energy (BLE) peripherals. It features a modern, energetic Material 3 interface and implements the custom V.BTTN hardware protocol for event detection and acknowledgment.
 
