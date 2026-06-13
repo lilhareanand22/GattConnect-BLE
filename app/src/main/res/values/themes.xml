@@ -1,0 +1,4 @@
+<resources>
+
+    <style name="Theme.BleVButton" parent="Theme.MaterialComponents.Light" />
+</resources>
