@@ -10,6 +10,7 @@ import android.content.Context
 import android.os.Build
 import android.os.ParcelUuid
 import android.util.Log
+import anand.jagdish.blevbutton.data.service.BleForegroundService
 import anand.jagdish.blevbutton.domain.model.BleDevice
 import anand.jagdish.blevbutton.domain.model.ConnectionState
 import anand.jagdish.blevbutton.domain.repository.BleRepository
@@ -182,6 +183,13 @@ class BleRepositoryImpl @Inject constructor(
 
     private fun updateConnectionState(state: ConnectionState, address: String? = currentConnectingAddress) {
         _connectionState.value = state
+        
+        if (state is ConnectionState.Connected) {
+            BleForegroundService.startService(context)
+        } else if (state is ConnectionState.Disconnected || state is ConnectionState.Failed) {
+            BleForegroundService.stopService(context)
+        }
+
         _scannedDevices.update { devices ->
             devices.map {
                 if (it.address == address) it.copy(connectionState = state)
