@@ -3,6 +3,7 @@ package anand.jagdish.blevbutton.data.repository
 import android.annotation.SuppressLint
 import android.bluetooth.*
 import android.bluetooth.le.ScanCallback
+import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.Context
@@ -15,6 +16,7 @@ import anand.jagdish.blevbutton.domain.repository.BleRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,9 +56,10 @@ class BleRepositoryImpl @Inject constructor(
         private val NOTIFICATION_UUID = UUID.fromString("FFFFFFF4-00F7-4000-B000-000000000000")
         private val VERIFICATION_UUID = UUID.fromString("FFFFFFF5-00F7-4000-B000-000000000000")
         
-        /** Key required by V.BTTN for verification within 30 seconds of connection. */
         private val VERIFICATION_KEY = byteArrayOf(0x80.toByte(), 0xBE.toByte(), 0xF5.toByte(), 0xAC.toByte(), 0xFF.toByte())
         private val CLIENT_CHARACTERISTIC_CONFIG_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
+        private val SOS_BUTTON_SERVICE_ID = UUID.fromString("00001802-0000-1000-8000-00805f9b34fb")
+        private const val SCAN_PERIOD = 15000L
     }
 
     private val _scannedDevices = MutableStateFlow<List<BleDevice>>(emptyList())
@@ -68,9 +71,14 @@ class BleRepositoryImpl @Inject constructor(
     private val _receivedMessages = MutableSharedFlow<String>()
     override val receivedMessages = _receivedMessages.asSharedFlow()
 
+    private val _isScanning = MutableStateFlow(false)
+    override val isScanning = _isScanning.asStateFlow()
+
     private var bluetoothGatt: BluetoothGatt? = null
     private val scanner = bluetoothAdapter?.bluetoothLeScanner
     private var currentConnectingAddress: String? = null
+    private var scanJob: Job? = null
+    private val repositoryScope = CoroutineScope(Dispatchers.IO)
 
     private val scanCallback = object : ScanCallback() {
         override fun onScanResult(callbackType: Int, result: ScanResult) {
@@ -78,12 +86,7 @@ class BleRepositoryImpl @Inject constructor(
             val rssi = result.rssi
             val name = device.name ?: "Unknown"
             
-//            // Filter by name to ensure we only interact with relevant hardware
-//            if (!name.contains("V.BTTN", ignoreCase = true) &&
-//                !name.contains("V.ALert", ignoreCase = true)) return
-            
-            // To show only V.ALert devices, uncomment the line below:
-            // if (name != "V.ALert") return
+//
             
             _scannedDevices.update { devices ->
                 val existingDevice = devices.find { it.address == device.address }
@@ -104,24 +107,37 @@ class BleRepositoryImpl @Inject constructor(
     }
 
     override fun startScanning() {
-        _scannedDevices.value = emptyList()
-        scanner?.startScan(scanCallback)
+        if (_isScanning.value) return
 
-//        val filters = listOf(
-//            ScanFilter.Builder()
-//                .setServiceUuid(ParcelUuid(VSN_SERVICE_UUID))
-//                .build()
-//        )
-//
-//        val settings = ScanSettings.Builder()
-//            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
-//            .build()
-//
-//        scanner?.startScan(filters, settings, scanCallback)
+        _scannedDevices.value = emptyList()
+        _isScanning.value = true
+
+        val filters = listOf(
+            ScanFilter.Builder()
+                .setServiceUuid(ParcelUuid(SOS_BUTTON_SERVICE_ID))
+                .build()
+        )
+
+        val settings = ScanSettings.Builder()
+            .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
+            .build()
+
+        scanner?.startScan(filters, settings, scanCallback)
+
+        
+        scanJob?.cancel()
+        scanJob = repositoryScope.launch {
+            delay(SCAN_PERIOD)
+            stopScanning()
+        }
     }
 
     override fun stopScanning() {
+        if (!_isScanning.value) return
+        
         scanner?.stopScan(scanCallback)
+        _isScanning.value = false
+        scanJob?.cancel()
     }
 
     override fun connect(address: String) {
