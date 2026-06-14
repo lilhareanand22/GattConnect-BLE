@@ -78,5 +78,4 @@ Users can manually interact with the `LONG_PRESS_ACK_UUID` (`FFFFFFF3...`):
 3. Ensure Bluetooth and Location permissions are granted on the test device.
 4. Build and run on an Android 8.0 (API 26) or higher device.
 
-## 📄 License
-Internal Development - Google Jetpack Training.
+
