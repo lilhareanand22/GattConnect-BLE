@@ -10,8 +10,15 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
+import anand.jagdish.blevbutton.domain.repository.BleRepository
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class BleForegroundService : Service() {
+
+    @Inject
+    lateinit var repository: BleRepository
 
     companion object {
         private const val CHANNEL_ID = "ble_service_channel"
@@ -53,13 +60,21 @@ class BleForegroundService : Service() {
         return START_STICKY
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // This is called when the user swipes away the app from the recents screen.
+        // We disconnect the BLE device and stop the service.
+        repository.disconnect()
+        stopSelf()
+    }
+
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotification(): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("GattConnect-BLE")
             .setContentText("Connected to V.BTTN in background")
-            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth) // Using system icon for now
+            .setSmallIcon(android.R.drawable.stat_sys_data_bluetooth)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .build()
