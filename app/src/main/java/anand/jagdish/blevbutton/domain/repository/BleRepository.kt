@@ -27,6 +27,11 @@ interface BleRepository {
     val receivedMessages: Flow<String>
 
     /**
+     * A [Flow] representing whether the BLE scanner is currently active.
+     */
+    val isScanning: Flow<Boolean>
+
+    /**
      * Starts scanning for nearby BLE devices.
      */
     fun startScanning()

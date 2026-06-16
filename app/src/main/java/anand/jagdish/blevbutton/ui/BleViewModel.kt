@@ -67,6 +67,13 @@ class BleViewModel @Inject constructor(
             }
             .launchIn(viewModelScope)
 
+        // Collect scanning state changes
+        repository.isScanning
+            .onEach { isScanning ->
+                _uiState.update { it.copy(isScanning = isScanning) }
+            }
+            .launchIn(viewModelScope)
+
         // Collect incoming BLE messages and add to log
         repository.receivedMessages
             .onEach { content ->
@@ -86,10 +93,8 @@ class BleViewModel @Inject constructor(
     fun toggleScan() {
         if (_uiState.value.isScanning) {
             repository.stopScanning()
-            _uiState.update { it.copy(isScanning = false) }
         } else {
             repository.startScanning()
-            _uiState.update { it.copy(isScanning = true, devices = emptyList()) }
         }
     }
 
@@ -99,7 +104,6 @@ class BleViewModel @Inject constructor(
      */
     fun connect(address: String) {
         repository.connect(address)
-        _uiState.update { it.copy(isScanning = false) }
     }
 
     /**
