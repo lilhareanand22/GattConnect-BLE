@@ -51,15 +51,15 @@ class BleRepositoryImpl @Inject constructor(
 ) : BleRepository {
 
     companion object {
-        private val VSN_SERVICE_UUID = UUID.fromString("FFFFFFF0-00F7-4000-B000-000000000000")
-        private val DETECTION_CONFIG_UUID = UUID.fromString("FFFFFFF2-00F7-4000-B000-000000000000")
-        private val LONG_PRESS_ACK_UUID = UUID.fromString("FFFFFFF3-00F7-4000-B000-000000000000")
-        private val NOTIFICATION_UUID = UUID.fromString("FFFFFFF4-00F7-4000-B000-000000000000")
-        private val VERIFICATION_UUID = UUID.fromString("FFFFFFF5-00F7-4000-B000-000000000000")
-        
+        private val VSN_SERVICE_UUID = UUID.fromString("")
+        private val DETECTION_CONFIG_UUID = UUID.fromString("")
+        private val LONG_PRESS_ACK_UUID = UUID.fromString("")
+        private val NOTIFICATION_UUID = UUID.fromString("")
+        private val VERIFICATION_UUID = UUID.fromString("")
+
         private val VERIFICATION_KEY = byteArrayOf(0x80.toByte(), 0xBE.toByte(), 0xF5.toByte(), 0xAC.toByte(), 0xFF.toByte())
-        private val CLIENT_CHARACTERISTIC_CONFIG_UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
-        private val SOS_BUTTON_SERVICE_ID = UUID.fromString("00001802-0000-1000-8000-00805f9b34fb")
+        private val CLIENT_CHARACTERISTIC_CONFIG_UUID = UUID.fromString("")
+        private val SOS_BUTTON_SERVICE_ID = UUID.fromString("")
         private const val SCAN_PERIOD = 15000L
     }
 

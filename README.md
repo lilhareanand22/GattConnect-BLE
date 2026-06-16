@@ -1,16 +1,16 @@
 # GattConnect-BLE
 
-![App Screen](input_images/app-screen.png)
 
-BleVButton is a production-ready Android application designed to scan for, connect to, and interact with **V.BTTN** Bluetooth Low Energy (BLE) peripherals. It features a modern, energetic Material 3 interface and implements the custom V.BTTN hardware protocol for event detection and acknowledgment.
+
+GattConnect-BLE is a production-ready Android template demonstrating how to scan for, connect to, and interact with Bluetooth Low Energy (BLE) peripherals. It showcases a modern architecture for handling the complexities of the Android Bluetooth GATT stack with a focus on reliability and clean code.
 
 ## 🚀 Features
 
-- **Real-time BLE Scanning**: Discovery of nearby BLE devices with live RSSI (signal strength) updates.
-- **V.BTTN Protocol Support**: Automatic verification, configuration, and event parsing for V.BTTN hardware.
-- **Event Monitoring**: Terminal-style log for tracking button presses, releases, long presses, and fall detections.
-- **Manual Controls**: Ability to acknowledge events and stop device blinking alerts remotely.
-- **Adaptive UI**: Responsive design for phones and tablets with Material 3 styling and dynamic color support.
+- **Real-time BLE Scanning**: Efficient discovery of nearby BLE devices with live RSSI (signal strength) updates.
+- **Generic GATT Support**: Robust implementation for discovering services, reading/writing characteristics, and handling notifications.
+- **Asynchronous State Management**: Clean handling of connection states and data streams using Kotlin Flows.
+- **Event Logging**: A terminal-style monitor to track GATT events and data exchanges in real-time.
+- **Material 3 UI**: A responsive, modern interface with dynamic color support and adaptive layouts.
 
 ## 🛠 Technology Stack
 
@@ -23,61 +23,43 @@ BleVButton is a production-ready Android application designed to scan for, conne
 
 ## 📐 Architecture
 
-The project follows Clean Architecture principles, ensuring a clear separation of concerns between the UI, business logic, and data layers.
+The project follows Clean Architecture principles, ensuring that Bluetooth hardware logic is decoupled from the UI.
 
-```mermaid
-graph TD
-    subgraph "UI Layer (Compose)"
-        UI[MainActivity / Screens]
-        VM[BleViewModel]
-    end
 
-    subgraph "Domain Layer"
-        RepoInt[BleRepository Interface]
-        Models[BleDevice / ConnectionState]
-    end
+## 🔄 BLE Integration Approaches
 
-    subgraph "Data Layer"
-        RepoImpl[BleRepositoryImpl]
-        GATT[Android Bluetooth GATT]
-    end
+This project emphasizes the transition from older Android patterns to modern, reactive programming.
 
-    UI --> VM
-    VM --> RepoInt
-    RepoImpl -- implements --> RepoInt
-    RepoImpl --> GATT
-    GATT -.-> HW[V.BTTN Peripheral]
-```
+### Legacy Approach (The "Callback Hell")
+Traditional BLE development in Android relies heavily on `BluetoothGattCallback`. This often leads to:
+- Deeply nested callbacks that are hard to read and maintain.
+- Difficulty managing threading (GATT callbacks often arrive on Binder threads).
+- Fragile state management when handling sequential operations (like write-then-read).
 
-## 🔄 Workflow & Protocol
+### Modern Approach (The Reactive Way)
+This implementation leverages modern Kotlin features to solve these issues:
+- **Coroutines**: Simplifies asynchronous tasks, allowing for sequential-looking code for complex GATT handshakes.
+- **Flows/StateFlow**: Converts GATT call[gradle](gradle)backs into observable streams, making it easy for the UI to react to state changes (Connecting, Connected, Disconnected).
+- **Structured Concurrency**: Ensures Bluetooth operations are tied to appropriate lifecycles, preventing memory leaks and orphaned connections.
+
+## ⚙️ Generic Workflow
 
 ### 1. Discovery
-The app uses `BluetoothLeScanner` to find devices. RSSI values are updated in real-time within the `scannedDevices` Flow.
+The app utilizes `BluetoothLeScanner` with optimized scan filters. RSSI values are streamed through a `SharedFlow` to provide real-time UI updates without unnecessary recompositions.
 
-### 2. V.BTTN Connection & Verification
-Upon connection, the app performs the following critical steps within the `setupVBttn` sequence:
-1. **Verification**: Writes the proprietary key `80:BE:F5:AC:FF` to the Verification characteristic (`FFFFFFF5...`) within 30 seconds.
-2. **Configuration**: Writes `0x07` to the Detection Config characteristic (`FFFFFFF2...`) to enable Short/Long press and Fall detection.
-3. **Subscription**: Enables notifications on the Notification characteristic (`FFFFFFF4...`).
+### 2. Connection & Service Discovery
+Upon connection, the app triggers `discoverServices()`. This implementation demonstrates how to safely traverse the GATT tree to identify specific characteristics required for your device's protocol.
 
-### 3. Event Handling
-When a notification is received, it is parsed based on the following codes:
-- `0x01`: Button Pressed
-- `0x00`: Button Released
-- `0x03`: Long Button Press (Triggers an automatic ACK `0x01`)
-- `0x04`: Fall Event Detected
-- `0x05`: High-G Event Detected
-
-### 4. Acknowledgment & Clearing
-Users can manually interact with the `LONG_PRESS_ACK_UUID` (`FFFFFFF3...`):
-- **Acknowledge (`0x01`)**: Confirms receipt of the event.
-- **Clear Blinking (`0x00`)**: Stops the device's red-green LED visual alert.
+### 3. Data Interaction
+The template provides clean patterns for:
+- **Writing**: Sending configuration or command bytes to characteristics.
+- **Notifications**: Subscribing to characteristic changes to receive data from the peripheral asynchronously.
+- **Parsing**: A dedicated layer for converting raw byte arrays into meaningful domain models.
 
 ## 📦 Installation
 
 1. Clone the repository.
 2. Open in Android Studio (Ladybug or newer recommended).
 3. Ensure Bluetooth and Location permissions are granted on the test device.
-4. Build and run on an Android 8.0 (API 26) or higher device.
-
-
+4. Please add own BLE device UUID as per device configuration
+5. Build and run on an Android 8.0 (API 26) or higher device.
